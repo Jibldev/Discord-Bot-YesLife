@@ -1,0 +1,25 @@
+{
+  "name": "discord-bot-yeslife",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jibldev/Discord-Bot-YesLife.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Jibldev/Discord-Bot-YesLife/issues"
+  },
+  "homepage": "https://github.com/Jibldev/Discord-Bot-YesLife#readme",
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "node-cron": "^3.0.3"
+  }
+}
