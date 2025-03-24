@@ -2,6 +2,16 @@ require("dotenv").config({ path: "./.env" });
 
 const { Client, IntentsBitField } = require("discord.js");
 const cron = require("node-cron");
+const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Bot actif!");
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Serveur HTTP actif.");
+});
 
 const client = new Client({
   intents: [
