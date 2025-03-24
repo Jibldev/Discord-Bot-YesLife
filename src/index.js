@@ -27,7 +27,7 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "56 12 * * *",
+    "30 10 * * *",
     () => {
       const channel = client.channels.cache.get("1353690374526472212");
       if (channel) {
