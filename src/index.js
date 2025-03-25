@@ -41,7 +41,7 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "30 14 * * *",
+    "45 14 * * *",
     async () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
