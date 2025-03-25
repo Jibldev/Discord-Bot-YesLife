@@ -41,7 +41,7 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "45 14 * * *",
+    "50 14 * * *",
     async () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
@@ -211,6 +211,5 @@ client.on("messageCreate", (message) => {
     message.reply({ embeds: [embed] });
   }
 });
-
 
 client.login(process.env.DISCORD_TOKEN);
