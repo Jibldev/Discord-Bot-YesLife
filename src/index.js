@@ -175,7 +175,6 @@ client.on("messageCreate", (message) => {
   );
 });
 
-// Message de test (ajouter data si besoin)
 client.on("messageCreate", (message) => {
   // Ignorer les messages des bots
   if (message.author.bot) return;
@@ -192,9 +191,26 @@ client.on("messageCreate", (message) => {
         iconURL: client.user.displayAvatarURL(),
       });
 
+    // Vérifier si un ou plusieurs canaux sont définis
+    let channelsList = "Aucun canal défini.";
+    if (fs.existsSync("channels.json")) {
+      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+      channelsList =
+        Object.keys(channels).length > 0
+          ? `Liste des canaux définis :\n${Object.values(channels).join("\n")}`
+          : "Aucun canal défini.";
+    }
+
+    // Ajouter la liste des canaux dans l'embed
+    embed.addFields({
+      name: "Canaux définis pour les messages quotidiens",
+      value: channelsList,
+    });
+
     // Répondre avec l'embed
     message.reply({ embeds: [embed] });
   }
 });
+
 
 client.login(process.env.DISCORD_TOKEN);
