@@ -10,6 +10,18 @@ app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
 
+// Route de DEBUG : affiche les réactions enregistrées
+app.get("/reactions", (req, res) => {
+  const fs = require("fs");
+
+  if (fs.existsSync("reactions.json")) {
+    const data = JSON.parse(fs.readFileSync("reactions.json", "utf8"));
+    res.json(data);
+  } else {
+    res.status(404).send("Aucune réaction enregistrée pour l'instant.");
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log("Serveur HTTP actif.");
 });
@@ -20,6 +32,7 @@ const client = new Client({
     IntentsBitField.Flags.GuildMembers,
     IntentsBitField.Flags.GuildMessages,
     IntentsBitField.Flags.MessageContent,
+    IntentsBitField.Flags.GuildMessageReactions,
   ],
 });
 
@@ -28,15 +41,24 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "25 14 * * *",
-    () => {
+    "45 13 * * *",
+    async () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
 
       for (const guildId in channels) {
         const channel = client.channels.cache.get(channels[guildId]);
         if (channel) {
-          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
+          try {
+            const message = await channel.send(
+              "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
+            );
+
+            // 👇 Ajout automatique des réactions ici :
+            await message.react("✅");
+          } catch (error) {
+            console.error(`Erreur pour le serveur ${guildId}:`, error);
+          }
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
@@ -46,6 +68,43 @@ client.once("ready", () => {
       timezone: "Europe/Paris",
     }
   );
+});
+
+client.on("messageReactionAdd", (reaction, user) => {
+  try {
+    // Ignore les réactions des bots ou si ce n'est pas ✅
+    if (user.bot || reaction.emoji.name !== "✅") return;
+
+    // Charge le fichier JSON actuel
+    let reactionsData = {};
+    const reactionsFile = "reactions.json";
+
+    if (fs.existsSync(reactionsFile)) {
+      reactionsData = JSON.parse(fs.readFileSync(reactionsFile, "utf8"));
+    }
+
+    const messageId = reaction.message.id;
+
+    // Initialisation si le message n'existe pas encore
+    if (!reactionsData[messageId]) {
+      reactionsData[messageId] = [];
+    }
+
+    // Vérifie si l'utilisateur a déjà réagi
+    if (!reactionsData[messageId].includes(user.id)) {
+      reactionsData[messageId].push(user.id);
+    }
+
+    // Sauvegarde immédiatement les données mises à jour
+    fs.writeFileSync(reactionsFile, JSON.stringify(reactionsData, null, 2));
+
+    console.log(`Réaction enregistrée pour ${user.username}`);
+
+    // Envoie un message de confirmation
+    reaction.message.channel.send(`Merci ${user.username} pour ta réaction`);
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement de la réaction :", error);
+  }
 });
 
 client.on("messageCreate", (message) => {
