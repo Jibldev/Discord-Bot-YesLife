@@ -24,16 +24,21 @@ const client = new Client({
 
 // Lancer cron APRÈS que le bot soit prêt
 cron.schedule(
-  "50 11 * * *",
+  "55 11 * * *",
   async () => {
     const channel = client.channels.cache.get("1354030838832168970");
     if (channel) {
-      channel.send(
-        "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀\n\nRéagissez avec : ✅ "
-      );
-
-      // Ajoute automatiquement les réactions au message
-      await message.react("✅");
+      try {
+        const message = await channel.send(
+          "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
+        );
+        await message.react("✅");
+      } catch (error) {
+        console.error(
+          "Erreur lors de l'envoi du message ou des réactions :",
+          error
+        );
+      }
     } else {
       console.error("Le canal spécifié n'a pas été trouvé !");
     }
