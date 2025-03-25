@@ -29,14 +29,23 @@ client.once("ready", () => {
 
   cron.schedule(
     "30 10 * * *",
-    () => {
+    async () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
 
       for (const guildId in channels) {
         const channel = client.channels.cache.get(channels[guildId]);
         if (channel) {
-          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
+          try {
+            const message = await channel.send(
+              "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
+            );
+
+            // 👇 Ajout automatique des réactions ici :
+            await message.react("✅");
+          } catch (error) {
+            console.error(`Erreur pour le serveur ${guildId}:`, error);
+          }
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
@@ -46,6 +55,36 @@ client.once("ready", () => {
       timezone: "Europe/Paris",
     }
   );
+});
+
+client.on("messageReactionAdd", (reaction, user) => {
+  // Ignore les réactions des bots ou si ce n'est pas ✅
+  if (user.bot || reaction.emoji.name !== "✅") return;
+
+  // Charge le fichier JSON actuel
+  let reactionsData = {};
+  const reactionsFile = "reactions.json";
+
+  if (fs.existsSync(reactionsFile)) {
+    reactionsData = JSON.parse(fs.readFileSync(reactionsFile, "utf8"));
+  }
+
+  const messageId = reaction.message.id;
+
+  // Initialisation si le message n'existe pas encore
+  if (!reactionsData[messageId]) {
+    reactionsData[messageId] = [];
+  }
+
+  // Vérifie si l'utilisateur a déjà réagi
+  if (!reactionsData[messageId].includes(user.id)) {
+    reactionsData[messageId].push(user.id);
+  }
+
+  // Sauvegarde immédiatement les données mises à jour
+  fs.writeFileSync(reactionsFile, JSON.stringify(reactionsData, null, 2));
+
+  console.log(`Réaction enregistrée pour ${user.username}`);
 });
 
 client.on("messageCreate", (message) => {
@@ -80,7 +119,7 @@ client.on("messageCreate", (message) => {
   // Ignorer les messages des bots
   if (message.author.bot) return;
 
-  // Vérifier si le message est la commande "!test" 
+  // Vérifier si le message est la commande "!test"
   if (message.content.toLowerCase() === "!test") {
     // Créer un embed stylé
     const embed = new EmbedBuilder()
