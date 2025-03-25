@@ -10,6 +10,18 @@ app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
 
+// Route de DEBUG : affiche les réactions enregistrées
+app.get("/reactions", (req, res) => {
+  const fs = require("fs");
+
+  if (fs.existsSync("reactions.json")) {
+    const data = JSON.parse(fs.readFileSync("reactions.json", "utf8"));
+    res.json(data);
+  } else {
+    res.status(404).send("Aucune réaction enregistrée pour l'instant.");
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log("Serveur HTTP actif.");
 });
