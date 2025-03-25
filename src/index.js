@@ -40,7 +40,7 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "55 13 * * *",
+    "00 14 * * *",
     async () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
@@ -49,7 +49,7 @@ client.once("ready", () => {
         const channel = client.channels.cache.get(channels[guildId]);
         if (channel) {
           try {
-            const message = await channel.send(
+            const message = channel.send(
               "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
             );
 
