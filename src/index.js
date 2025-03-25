@@ -75,7 +75,7 @@ client.on("messageCreate", (message) => {
   message.channel.send("🚀 Ce sera ici que je posterai le message quotidien !");
 });
 
-// Message de test
+// Message de test (ajouter data si besoin)
 client.on("messageCreate", (message) => {
   // Ignorer les messages des bots
   if (message.author.bot) return;
