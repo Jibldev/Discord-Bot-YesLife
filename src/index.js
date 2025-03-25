@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "./.env" });
 
-const { Client, IntentsBitField } = require("discord.js");
+const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
 const cron = require("node-cron");
 const express = require("express");
 const fs = require("fs");
@@ -73,6 +73,28 @@ client.on("messageCreate", (message) => {
 
   // 🔹 Envoie un message immédiatement dans le canal défini
   message.channel.send("🚀 Ce sera ici que je posterai le message quotidien !");
+});
+
+// Message de test
+client.on("messageCreate", (message) => {
+  // Ignorer les messages des bots
+  if (message.author.bot) return;
+
+  // Vérifier si le message est la commande "!test"
+  if (message.content.toLowerCase() === "!test") {
+    // Créer un embed stylé
+    const embed = new EmbedBuilder()
+      .setColor("#00ff00") // Couleur verte
+      .setTitle("Test réussi ! ✅")
+      .setDescription("Le bot fonctionne correctement.")
+      .setFooter({
+        text: "Commande test",
+        iconURL: client.user.displayAvatarURL(),
+      });
+
+    // Répondre avec l'embed
+    message.reply({ embeds: [embed] });
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
