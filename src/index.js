@@ -10,18 +10,6 @@ app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
 
-// Route de DEBUG : affiche les réactions enregistrées
-app.get("/reactions", (req, res) => {
-  const fs = require("fs");
-
-  if (fs.existsSync("reactions.json")) {
-    const data = JSON.parse(fs.readFileSync("reactions.json", "utf8"));
-    res.json(data);
-  } else {
-    res.status(404).send("Aucune réaction enregistrée pour l'instant.");
-  }
-});
-
 app.listen(process.env.PORT || 3000, () => {
   console.log("Serveur HTTP actif.");
 });
@@ -40,24 +28,15 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "10 14 * * *",
-    async () => {
+    "25 14 * * *",
+    () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
 
       for (const guildId in channels) {
         const channel = client.channels.cache.get(channels[guildId]);
         if (channel) {
-          try {
-            const message = channel.send(
-              "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
-            );
-
-            // 👇 Ajout automatique des réactions ici :
-            await message.react("✅");
-          } catch (error) {
-            console.error(`Erreur pour le serveur ${guildId}:`, error);
-          }
+          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
