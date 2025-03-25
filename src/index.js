@@ -107,6 +107,7 @@ client.on("messageReactionAdd", (reaction, user) => {
   }
 });
 
+// Commande pour définir un canal
 client.on("messageCreate", (message) => {
   if (!message.content.startsWith("!setchannel")) return;
   if (!message.member.permissions.has("ADMINISTRATOR")) {
@@ -123,6 +124,13 @@ client.on("messageCreate", (message) => {
     channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
   }
 
+  // Vérification si le canal est déjà défini
+  if (channels[guildId] === channelId) {
+    return message.reply(
+      `❌ Ce canal est déjà défini pour les messages quotidiens !`
+    );
+  }
+
   channels[guildId] = channelId;
   fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
 
@@ -130,8 +138,41 @@ client.on("messageCreate", (message) => {
     `✅ Ce canal (${message.channel}) est maintenant défini pour les messages quotidiens !`
   );
 
-  // 🔹 Envoie un message immédiatement dans le canal défini
+  // Envoie un message immédiatement dans le canal défini
   message.channel.send("🚀 Ce sera ici que je posterai le message quotidien !");
+});
+
+// Commande pour retirer un canal
+client.on("messageCreate", (message) => {
+  if (!message.content.startsWith("!removechannel")) return;
+  if (!message.member.permissions.has("ADMINISTRATOR")) {
+    return message.reply(
+      "🚫 Tu dois être administrateur pour utiliser cette commande !"
+    );
+  }
+
+  const channelId = message.channel.id;
+  const guildId = message.guild.id;
+
+  let channels = {};
+  if (fs.existsSync("channels.json")) {
+    channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+  }
+
+  // Vérification si le canal est défini pour ce serveur
+  if (channels[guildId] !== channelId) {
+    return message.reply(
+      `❌ Ce canal n'est pas défini pour les messages quotidiens.`
+    );
+  }
+
+  // Supprimer le canal de la liste
+  delete channels[guildId];
+  fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
+
+  message.reply(
+    `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
+  );
 });
 
 // Message de test (ajouter data si besoin)
