@@ -80,7 +80,7 @@ client.on("messageCreate", (message) => {
   // Ignorer les messages des bots
   if (message.author.bot) return;
 
-  // Vérifier si le message est la commande "!test"
+  // Vérifier si le message est la commande "!test" 
   if (message.content.toLowerCase() === "!test") {
     // Créer un embed stylé
     const embed = new EmbedBuilder()
