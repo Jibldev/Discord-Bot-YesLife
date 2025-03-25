@@ -41,24 +41,15 @@ client.once("ready", () => {
   console.log(`🤖 Connecté en tant que ${client.user.tag}`);
 
   cron.schedule(
-    "10 15 * * *",
-    async () => {
+    "22 15 * * *",
+    () => {
       if (!fs.existsSync("channels.json")) return;
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
 
       for (const guildId in channels) {
         const channel = client.channels.cache.get(channels[guildId]);
         if (channel) {
-          try {
-            const message = channel.send(
-              "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
-            );
-
-            // 👇 Ajout automatique des réactions ici :
-            await message.react("✅");
-          } catch (error) {
-            console.error(`Erreur pour le serveur ${guildId}:`, error);
-          }
+          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
