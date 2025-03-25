@@ -3,6 +3,7 @@ require("dotenv").config({ path: "./.env" });
 const { Client, IntentsBitField } = require("discord.js");
 const cron = require("node-cron");
 const express = require("express");
+const fs = require("fs");
 const app = express();
 
 app.get("/", (req, res) => {
@@ -23,29 +24,55 @@ const client = new Client({
 });
 
 // Lancer cron APRÈS que le bot soit prêt
-cron.schedule(
-  "55 11 * * *",
-  async () => {
-    const channel = client.channels.cache.get("1354030838832168970");
-    if (channel) {
-      try {
-        const message = await channel.send(
-          "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀"
-        );
-        await message.react("✅");
-      } catch (error) {
-        console.error(
-          "Erreur lors de l'envoi du message ou des réactions :",
-          error
-        );
+client.once("ready", () => {
+  console.log(`🤖 Connecté en tant que ${client.user.tag}`);
+
+  cron.schedule(
+    "30 10 * * *",
+    () => {
+      if (!fs.existsSync("channels.json")) return;
+      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+
+      for (const guildId in channels) {
+        const channel = client.channels.cache.get(channels[guildId]);
+        if (channel) {
+          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
+        } else {
+          console.error(`Canal introuvable pour le serveur ${guildId}`);
+        }
       }
-    } else {
-      console.error("Le canal spécifié n'a pas été trouvé !");
+    },
+    {
+      timezone: "Europe/Paris",
     }
-  },
-  {
-    timezone: "Europe/Paris",
+  );
+});
+
+client.on("messageCreate", (message) => {
+  if (!message.content.startsWith("!setchannel")) return;
+  if (!message.member.permissions.has("ADMINISTRATOR")) {
+    return message.reply(
+      "🚫 Tu dois être administrateur pour utiliser cette commande !"
+    );
   }
-);
+
+  const channelId = message.channel.id;
+  const guildId = message.guild.id;
+
+  let channels = {};
+  if (fs.existsSync("channels.json")) {
+    channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+  }
+
+  channels[guildId] = channelId;
+  fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
+
+  message.reply(
+    `✅ Ce canal (${message.channel}) est maintenant défini pour les messages quotidiens !`
+  );
+
+  // 🔹 Envoie un message immédiatement dans le canal défini
+  message.channel.send("🚀 Ce sera ici que je posterai le message quotidien !");
+});
 
 client.login(process.env.DISCORD_TOKEN);
