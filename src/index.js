@@ -36,30 +36,29 @@ const client = new Client({
   ],
 });
 
-// Lancer cron APRÈS que le bot soit prêt
-client.once("ready", () => {
-  console.log(`🤖 Connecté en tant que ${client.user.tag}`);
+cron.schedule(
+  "35 15 * * *",
+  async () => {
+    if (!fs.existsSync("channels.json")) return;
+    const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
 
-  cron.schedule(
-    "22 15 * * *",
-    () => {
-      if (!fs.existsSync("channels.json")) return;
-      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-
-      for (const guildId in channels) {
-        const channel = client.channels.cache.get(channels[guildId]);
+    for (const guildId in channels) {
+      try {
+        const channel = await client.channels.fetch(channels[guildId]);
         if (channel) {
-          channel.send("Bonjour ! Voici ton message quotidien à 10h30 ! 🚀");
+          channel.send("Bonjour ! Voici ton message quotidien à 15h22 ! 🚀");
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
+      } catch (error) {
+        console.error(`Erreur fetch canal serveur ${guildId}:`, error);
       }
-    },
-    {
-      timezone: "Europe/Paris",
     }
-  );
-});
+  },
+  {
+    timezone: "Europe/Paris",
+  }
+);
 
 client.on("messageReactionAdd", (reaction, user) => {
   try {
@@ -100,81 +99,70 @@ client.on("messageReactionAdd", (reaction, user) => {
 
 // Commande pour définir un canal
 client.on("messageCreate", (message) => {
-  if (!message.content.startsWith("!setchannel")) return;
-  if (!message.member.permissions.has("ADMINISTRATOR")) {
-    return message.reply(
-      "🚫 Tu dois être administrateur pour utiliser cette commande !"
-    );
-  }
-
-  const channelId = message.channel.id;
-  const guildId = message.guild.id;
-
-  let channels = {};
-  if (fs.existsSync("channels.json")) {
-    channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-  }
-
-  // Vérification si le canal est déjà défini
-  if (channels[guildId] === channelId) {
-    return message.reply(
-      `❌ Ce canal est déjà défini pour les messages quotidiens !`
-    );
-  }
-
-  channels[guildId] = channelId;
-  fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
-
-  message.reply(
-    `✅ Ce canal (${message.channel}) est maintenant défini pour les messages quotidiens !`
-  );
-
-  // Envoie un message immédiatement dans le canal défini
-  message.channel.send("🚀 Ce sera ici que je posterai le message quotidien !");
-});
-
-// Commande pour retirer un canal
-client.on("messageCreate", (message) => {
-  if (!message.content.startsWith("!removechannel")) return;
-  if (!message.member.permissions.has("ADMINISTRATOR")) {
-    return message.reply(
-      "🚫 Tu dois être administrateur pour utiliser cette commande !"
-    );
-  }
-
-  const channelId = message.channel.id;
-  const guildId = message.guild.id;
-
-  let channels = {};
-  if (fs.existsSync("channels.json")) {
-    channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-  }
-
-  // Vérification si le canal est défini pour ce serveur
-  if (channels[guildId] !== channelId) {
-    return message.reply(
-      `❌ Ce canal n'est pas défini pour les messages quotidiens.`
-    );
-  }
-
-  // Supprimer le canal de la liste
-  delete channels[guildId];
-  fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
-
-  message.reply(
-    `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
-  );
-});
-
-client.on("messageCreate", (message) => {
-  // Ignorer les messages des bots
   if (message.author.bot) return;
 
-  // Vérifier si le message est la commande "!test"
-  if (message.content.toLowerCase() === "!test") {
-    // Créer un embed stylé
+  const content = message.content.toLowerCase();
+
+  if (content.startsWith("!setchannel")) {
+    if (!message.member.permissions.has("ADMINISTRATOR")) {
+      return message.reply(
+        "🚫 Tu dois être administrateur pour utiliser cette commande !"
+      );
+    }
+
+    const channelId = message.channel.id;
+    const guildId = message.guild.id;
+
+    let channels = {};
+    if (fs.existsSync("channels.json")) {
+      channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+    }
+
+    if (channels[guildId] === channelId) {
+      return message.reply(
+        `❌ Ce canal est déjà défini pour les messages quotidiens !`
+      );
+    }
+
+    channels[guildId] = channelId;
+    fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
+
+    message.reply(
+      `✅ Ce canal (${message.channel}) est maintenant défini pour les messages quotidiens !`
+    );
+    message.channel.send(
+      "🚀 Ce sera ici que je posterai le message quotidien !"
+    );
+  } else if (content.startsWith("!removechannel")) {
+    if (!message.member.permissions.has("ADMINISTRATOR")) {
+      return message.reply(
+        "🚫 Tu dois être administrateur pour utiliser cette commande !"
+      );
+    }
+
+    const channelId = message.channel.id;
+    const guildId = message.guild.id;
+
+    let channels = {};
+    if (fs.existsSync("channels.json")) {
+      channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+    }
+
+    if (channels[guildId] !== channelId) {
+      return message.reply(
+        `❌ Ce canal n'est pas défini pour les messages quotidiens.`
+      );
+    }
+
+    delete channels[guildId];
+    fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
+
+    message.reply(
+      `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
+    );
+  } else if (content === "!test") {
     const embed = new EmbedBuilder()
-      .setColor("#00ff00") // Couleur verte
+      .setColor("#00ff00")
       .setTitle("Test réussi ! ✅")
       .setDescription("Le bot fonctionne correctement.")
       .setFooter({
@@ -182,23 +170,22 @@ client.on("messageCreate", (message) => {
         iconURL: client.user.displayAvatarURL(),
       });
 
-    // Vérifier si un ou plusieurs canaux sont définis
     let channelsList = "Aucun canal défini.";
     if (fs.existsSync("channels.json")) {
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
       channelsList =
         Object.keys(channels).length > 0
-          ? `Liste des canaux définis :\n${Object.values(channels).join("\n")}`
+          ? `Liste des canaux définis :\n${Object.values(channels)
+              .map((id) => `<#${id}>`)
+              .join("\n")}`
           : "Aucun canal défini.";
     }
 
-    // Ajouter la liste des canaux dans l'embed
     embed.addFields({
       name: "Canaux définis pour les messages quotidiens",
       value: channelsList,
     });
 
-    // Répondre avec l'embed
     message.reply({ embeds: [embed] });
   }
 });
