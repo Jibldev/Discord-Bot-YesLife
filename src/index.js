@@ -97,6 +97,8 @@ client.on("messageReactionAdd", (reaction, user) => {
   fs.writeFileSync(reactionsFile, JSON.stringify(reactionsData, null, 2));
 
   console.log(`Réaction enregistrée pour ${user.username}`);
+
+  message.channel.send(`Merci ${user.username} pour ta réaction`);
 });
 
 client.on("messageCreate", (message) => {
