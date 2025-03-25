@@ -24,11 +24,11 @@ const client = new Client({
 
 // Lancer cron APRÈS que le bot soit prêt
 cron.schedule(
-  "45 11 * * *",
+  "50 11 * * *",
   async () => {
     const channel = client.channels.cache.get("1354030838832168970");
     if (channel) {
-      const message = await channel.send(
+      channel.send(
         "Bonjour ! Voici ton message quotidien à 10h30 ! 🚀\n\nRéagissez avec : ✅ "
       );
 
