@@ -117,7 +117,7 @@ client.on("messageCreate", (message) => {
 
     const channelId = message.channel.id;
     const guildId = message.guild.id;
-
+    // Commande !setchannel !removechannel
     let channels = {};
     if (fs.existsSync("channels.json")) {
       channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
@@ -165,6 +165,7 @@ client.on("messageCreate", (message) => {
     message.reply(
       `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
     );
+    // Commande !test
   } else if (content === "!test") {
     const embed = new EmbedBuilder()
       .setColor("#00ff00")
@@ -192,6 +193,7 @@ client.on("messageCreate", (message) => {
     });
 
     message.reply({ embeds: [embed] });
+    // Commande !testreact
   } else if (content === "!testreact") {
     message.channel
       .send("Ceci est un test de message avec une réaction automatique. 🚀")
@@ -202,6 +204,44 @@ client.on("messageCreate", (message) => {
         console.error("Erreur lors de l'envoi ou de la réaction :", error);
         message.reply("❌ Une erreur est survenue.");
       });
+    // Commande !setdaily
+  } else if (content.startsWith("!setdaily")) {
+    if (!message.member.permissions.has("Administrator")) {
+      return message.reply("🚫 Tu dois être administrateur pour faire cela.");
+    }
+
+    const args = message.content.split(" ");
+    if (args.length < 3) {
+      return message.reply(
+        "❌ Syntaxe : `!setdaily HH:MM Ton message personnalisé`"
+      );
+    }
+
+    const time = args[1];
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    if (!timeRegex.test(time)) {
+      return message.reply("❌ L'heure doit être au format HH:MM (ex: 14:30)");
+    }
+
+    const customMessage = args.slice(2).join(" ");
+    const guildId = message.guild.id;
+
+    let settings = {};
+    if (fs.existsSync("settings.json")) {
+      settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+    }
+
+    settings[guildId] = {
+      hour: time,
+      message: customMessage,
+    };
+
+    fs.writeFileSync("settings.json", JSON.stringify(settings, null, 2));
+
+    message.reply(
+      `✅ Message quotidien mis à jour : **${customMessage}** à **${time}**.`
+    );
   }
 });
 
