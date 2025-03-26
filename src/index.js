@@ -309,8 +309,11 @@ client.on("messageCreate", (message) => {
     const now = new Date().toLocaleString("fr-FR", {
       timeZone: "Europe/Paris",
     });
-    const [date, time] = now.split(", ");
-    const [currentHour, currentMinute] = time.split(":");
+
+    // Correction du split qui causait un bug sur Render
+    const timeParts = now.match(/(\d{2}):(\d{2})/);
+    const currentHour = timeParts?.[1] || "00";
+    const currentMinute = timeParts?.[2] || "00";
     const currentTime = `${currentHour}:${currentMinute}`;
 
     let settingHour = "Inconnu";
