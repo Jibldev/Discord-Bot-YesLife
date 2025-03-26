@@ -66,13 +66,17 @@ cron.schedule("* * * * *", async () => {
       const setting = settings[guildId];
 
       // Création des heures tolérées
+      const minuteMinus = ((parseInt(currentMinute) - 1 + 60) % 60)
+        .toString()
+        .padStart(2, "0");
+      const minutePlus = ((parseInt(currentMinute) + 1) % 60)
+        .toString()
+        .padStart(2, "0");
+
       const toleratedTimes = [
         currentTime,
-        `${currentHour}:${(parseInt(currentMinute) - 1 + 60) % 60}`.padStart(
-          5,
-          "0"
-        ),
-        `${currentHour}:${(parseInt(currentMinute) + 1) % 60}`.padStart(5, "0"),
+        `${currentHour}:${minuteMinus}`,
+        `${currentHour}:${minutePlus}`,
       ];
 
       // Vérifie si l'heure définie est dans la liste tolérée
@@ -273,7 +277,7 @@ client.on("messageCreate", (message) => {
       return message.reply("🚫 Tu dois être administrateur pour faire cela.");
     }
 
-    const args = message.content.split(" ");
+    const args = content.split(" ");
     if (args.length < 3) {
       return message.reply(
         "❌ Syntaxe : `!setdaily HH:MM Ton message personnalisé`"
