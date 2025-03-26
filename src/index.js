@@ -38,6 +38,8 @@ const client = new Client({
 
 let isJobRunning = false;
 
+let lastSent = {}; // mémoire temporaire pour éviter les doublons
+
 cron.schedule("* * * * *", async () => {
   if (isJobRunning) {
     console.log("⏳ Cron ignoré : tâche déjà en cours");
@@ -65,6 +67,8 @@ cron.schedule("* * * * *", async () => {
       const channelId = channels[guildId];
       const setting = settings[guildId];
 
+      if (!setting) continue;
+
       // Création des heures tolérées
       const minuteMinus = ((parseInt(currentMinute) - 1 + 60) % 60)
         .toString()
@@ -80,7 +84,15 @@ cron.schedule("* * * * *", async () => {
       ];
 
       // Vérifie si l'heure définie est dans la liste tolérée
-      if (!setting || !toleratedTimes.includes(setting.hour)) continue;
+      if (!setting || !toleratedTimes.includes(setting.hour)) {
+        continue;
+      }
+
+      // Empêche l'envoi multiple dans la même minute
+      if (lastSent[guildId] === currentTime) {
+        console.log(`⚠️ Déjà envoyé pour ${guildId} à ${currentTime}`);
+        continue;
+      }
 
       try {
         const channel = await client.channels.fetch(channelId);
@@ -89,6 +101,8 @@ cron.schedule("* * * * *", async () => {
             .send(setting.message)
             .then((sentMessage) => sentMessage.react("✅"))
             .catch(console.error);
+
+          lastSent[guildId] = currentTime; // Marque l'envoi
 
           console.log(
             `📨 Message envoyé à ${currentTime} dans le serveur ${guildId}`
