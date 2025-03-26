@@ -37,7 +37,7 @@ const client = new Client({
 });
 
 cron.schedule(
-  "25 12 * * *",
+  "33 12 * * *",
   async () => {
     if (!fs.existsSync("channels.json")) return;
     const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
