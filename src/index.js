@@ -37,26 +37,34 @@ const client = new Client({
 });
 
 cron.schedule(
-  "37 12 * * *",
+  "* * * * *",
   async () => {
     if (!fs.existsSync("channels.json")) return;
+    if (!fs.existsSync("settings.json")) return;
+
     const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+    const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+    const now = new Date();
+    const currentHour = now.getHours().toString().padStart(2, "0");
+    const currentMinute = now.getMinutes().toString().padStart(2, "0");
+    const currentTime = `${currentHour}:${currentMinute}`;
 
     for (const guildId in channels) {
+      const channelId = channels[guildId];
+      const setting = settings[guildId];
+
+      if (!setting || setting.hour !== currentTime) continue;
+
       try {
-        const channel = await client.channels.fetch(channels[guildId]);
+        const channel = await client.channels.fetch(channelId);
         if (channel) {
           channel
-            .send("Bonjour ! Voici ton message quotidien à 15h22 ! 🚀")
-            .then((sentMessage) => {
-              sentMessage.react("✅");
-            })
+            .send(setting.message)
+            .then((sentMessage) => sentMessage.react("✅"))
             .catch(console.error);
-        } else {
-          console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
       } catch (error) {
-        console.error(`Erreur fetch canal serveur ${guildId}:`, error);
+        console.error(`Erreur canal pour ${guildId}:`, error);
       }
     }
   },
