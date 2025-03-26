@@ -69,30 +69,7 @@ cron.schedule("* * * * *", async () => {
 
       if (!setting) continue;
 
-      // Création des heures tolérées
-      const minuteMinus = ((parseInt(currentMinute) - 1 + 60) % 60)
-        .toString()
-        .padStart(2, "0");
-      const minutePlus = ((parseInt(currentMinute) + 1) % 60)
-        .toString()
-        .padStart(2, "0");
-
-      const toleratedTimes = [
-        currentTime,
-        `${currentHour}:${minuteMinus}`,
-        `${currentHour}:${minutePlus}`,
-      ];
-
-      // Vérifie si l'heure définie est dans la liste tolérée
-      if (!setting || !toleratedTimes.includes(setting.hour)) {
-        continue;
-      }
-
-      // Empêche l'envoi multiple dans la même minute
-      if (lastSent[guildId] === currentTime) {
-        console.log(`⚠️ Déjà envoyé pour ${guildId} à ${currentTime}`);
-        continue;
-      }
+      if (setting.hour !== currentTime) continue;
 
       try {
         const channel = await client.channels.fetch(channelId);
