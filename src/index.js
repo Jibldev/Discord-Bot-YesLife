@@ -38,65 +38,59 @@ const client = new Client({
 
 let isJobRunning = false;
 
-cron.schedule(
-  "* * * * *",
-  async () => {
-    if (isJobRunning) {
-      console.log("⏳ Cron ignoré : tâche déjà en cours");
+cron.schedule("* * * * *", async () => {
+  if (isJobRunning) {
+    console.log("⏳ Cron ignoré : tâche déjà en cours");
+    return;
+  }
+
+  isJobRunning = true;
+  console.log("✅ Cron lancé");
+
+  try {
+    if (!fs.existsSync("channels.json") || !fs.existsSync("settings.json"))
       return;
-    }
 
-    isJobRunning = true;
-    console.log("✅ Cron lancé");
+    const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+    const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+    const now = new Date().toLocaleString("fr-FR", {
+      timeZone: "Europe/Paris",
+    });
+    const [date, time] = now.split(", ");
+    const [currentHour, currentMinute] = time.split(":");
+    const currentTime = `${currentHour}:${currentMinute}`;
 
-    try {
-      if (!fs.existsSync("channels.json") || !fs.existsSync("settings.json"))
-        return;
+    for (const guildId in channels) {
+      const channelId = channels[guildId];
+      const setting = settings[guildId];
 
-      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
-      const now = new Date().toLocaleString("fr-FR", {
-        timeZone: "Europe/Paris",
-      });
-      const [date, time] = now.split(", ");
-      const [currentHour, currentMinute] = time.split(":");
-      const currentTime = `${currentHour}:${currentMinute}`;
+      if (!setting || setting.hour !== currentTime) continue;
 
-      for (const guildId in channels) {
-        const channelId = channels[guildId];
-        const setting = settings[guildId];
+      try {
+        const channel = await client.channels.fetch(channelId);
+        if (channel) {
+          channel
+            .send(setting.message)
+            .then((sentMessage) => sentMessage.react("✅"))
+            .catch(console.error);
 
-        if (!setting || setting.hour !== currentTime) continue;
-
-        try {
-          const channel = await client.channels.fetch(channelId);
-          if (channel) {
-            channel
-              .send(setting.message)
-              .then((sentMessage) => sentMessage.react("✅"))
-              .catch(console.error);
-
-            console.log(
-              `📨 Message envoyé à ${currentTime} dans le serveur ${guildId}`
-            );
-          }
-        } catch (error) {
-          console.error(
-            `❌ Erreur lors de l'envoi dans le canal de ${guildId}:`,
-            error
+          console.log(
+            `📨 Message envoyé à ${currentTime} dans le serveur ${guildId}`
           );
         }
+      } catch (error) {
+        console.error(
+          `❌ Erreur lors de l'envoi dans le canal de ${guildId}:`,
+          error
+        );
       }
-    } catch (error) {
-      console.error("❌ Erreur globale dans le cron :", error);
-    } finally {
-      isJobRunning = false;
     }
-  },
-  {
-    timezone: "Europe/Paris",
+  } catch (error) {
+    console.error("❌ Erreur globale dans le cron :", error);
+  } finally {
+    isJobRunning = false;
   }
-);
+});
 
 client.on("messageReactionAdd", (reaction, user) => {
   try {
