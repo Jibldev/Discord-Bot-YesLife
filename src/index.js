@@ -255,6 +255,7 @@ client.on("messageCreate", (message) => {
     }
 
     message.reply({ embeds: [embed] });
+    // Commande !testreact
   } else if (content === "!testreact") {
     message.channel
       .send("Ceci est un test de message avec une réaction automatique. 🚀")
@@ -302,6 +303,33 @@ client.on("messageCreate", (message) => {
 
     message.reply(
       `✅ Message quotidien mis à jour : **${customMessage}** à **${time}**.`
+    );
+    // Commande !debugcron
+  } else if (content === "!debugcron") {
+    const now = new Date().toLocaleString("fr-FR", {
+      timeZone: "Europe/Paris",
+    });
+    const [date, time] = now.split(", ");
+    const [currentHour, currentMinute] = time.split(":");
+    const currentTime = `${currentHour}:${currentMinute}`;
+
+    let settingHour = "Inconnu";
+    let settingMessage = "Aucun message programmé.";
+    const guildId = message.guild.id;
+
+    if (fs.existsSync("settings.json")) {
+      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+      const setting = settings[guildId];
+      if (setting) {
+        settingHour = setting.hour;
+        settingMessage = setting.message;
+      }
+    }
+
+    message.reply(
+      `🕒 **Heure actuelle perçue par le bot** : \`${currentTime}\`\n` +
+        `📅 **Heure programmée** : \`${settingHour}\`\n` +
+        `💬 **Message programmé** : ${settingMessage}`
     );
   }
 });
