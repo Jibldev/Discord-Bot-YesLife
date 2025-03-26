@@ -55,9 +55,11 @@ cron.schedule(
 
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
       const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
-      const now = new Date();
-      const currentHour = now.getHours().toString().padStart(2, "0");
-      const currentMinute = now.getMinutes().toString().padStart(2, "0");
+      const now = new Date().toLocaleString("fr-FR", {
+        timeZone: "Europe/Paris",
+      });
+      const [date, time] = now.split(", ");
+      const [currentHour, currentMinute] = time.split(":");
       const currentTime = `${currentHour}:${currentMinute}`;
 
       for (const guildId in channels) {
