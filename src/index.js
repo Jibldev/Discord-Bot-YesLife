@@ -140,6 +140,7 @@ client.on("messageReactionAdd", (reaction, user) => {
 client.on("messageCreate", (message) => {
   if (message.author.bot) return;
 
+  const rawContent = message.content;
   const content = message.content.toLowerCase();
 
   if (content.startsWith("!setchannel")) {
@@ -268,7 +269,7 @@ client.on("messageCreate", (message) => {
       return message.reply("🚫 Tu dois être administrateur pour faire cela.");
     }
 
-    const args = content.split(" ");
+    const args = rawContent.split(" ");
     if (args.length < 3) {
       return message.reply(
         "❌ Syntaxe : `!setdaily HH:MM Ton message personnalisé`"
