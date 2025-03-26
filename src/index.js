@@ -37,7 +37,7 @@ const client = new Client({
 });
 
 cron.schedule(
-  "33 12 * * *",
+  "37 12 * * *",
   async () => {
     if (!fs.existsSync("channels.json")) return;
     const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
@@ -47,7 +47,7 @@ cron.schedule(
         const channel = await client.channels.fetch(channels[guildId]);
         if (channel) {
           channel.send("Bonjour ! Voici ton message quotidien à 15h22 ! 🚀");
-          await sentMessage.react("✅"); // Ajoute automatiquement la réaction
+          sentMessage.react("✅"); // Ajoute automatiquement la réaction
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
