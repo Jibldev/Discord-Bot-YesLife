@@ -46,8 +46,12 @@ cron.schedule(
       try {
         const channel = await client.channels.fetch(channels[guildId]);
         if (channel) {
-          channel.send("Bonjour ! Voici ton message quotidien à 15h22 ! 🚀");
-          sentMessage.react("✅"); // Ajoute automatiquement la réaction
+          channel
+            .send("Bonjour ! Voici ton message quotidien à 15h22 ! 🚀")
+            .then((sentMessage) => {
+              sentMessage.react("✅");
+            })
+            .catch(console.error);
         } else {
           console.error(`Canal introuvable pour le serveur ${guildId}`);
         }
@@ -188,6 +192,16 @@ client.on("messageCreate", (message) => {
     });
 
     message.reply({ embeds: [embed] });
+  } else if (content === "!testreact") {
+    message.channel
+      .send("Ceci est un test de message avec une réaction automatique. 🚀")
+      .then((sentMessage) => {
+        sentMessage.react("✅");
+      })
+      .catch((error) => {
+        console.error("Erreur lors de l'envoi ou de la réaction :", error);
+        message.reply("❌ Une erreur est survenue.");
+      });
   }
 });
 
