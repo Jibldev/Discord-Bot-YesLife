@@ -64,7 +64,18 @@ cron.schedule("* * * * *", async () => {
       const channelId = channels[guildId];
       const setting = settings[guildId];
 
-      if (!setting || setting.hour !== currentTime) continue;
+      // Création des heures tolérées
+      const toleratedTimes = [
+        currentTime,
+        `${currentHour}:${(parseInt(currentMinute) - 1 + 60) % 60}`.padStart(
+          5,
+          "0"
+        ),
+        `${currentHour}:${(parseInt(currentMinute) + 1) % 60}`.padStart(5, "0"),
+      ];
+
+      // Vérifie si l'heure définie est dans la liste tolérée
+      if (!setting || !toleratedTimes.includes(setting.hour)) continue;
 
       try {
         const channel = await client.channels.fetch(channelId);
