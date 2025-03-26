@@ -36,36 +36,59 @@ const client = new Client({
   ],
 });
 
+let isJobRunning = false;
+
 cron.schedule(
   "* * * * *",
   async () => {
-    if (!fs.existsSync("channels.json")) return;
-    if (!fs.existsSync("settings.json")) return;
+    if (isJobRunning) {
+      console.log("⏳ Cron ignoré : tâche déjà en cours");
+      return;
+    }
 
-    const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-    const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
-    const now = new Date();
-    const currentHour = now.getHours().toString().padStart(2, "0");
-    const currentMinute = now.getMinutes().toString().padStart(2, "0");
-    const currentTime = `${currentHour}:${currentMinute}`;
+    isJobRunning = true;
+    console.log("✅ Cron lancé");
 
-    for (const guildId in channels) {
-      const channelId = channels[guildId];
-      const setting = settings[guildId];
+    try {
+      if (!fs.existsSync("channels.json") || !fs.existsSync("settings.json"))
+        return;
 
-      if (!setting || setting.hour !== currentTime) continue;
+      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
+      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+      const now = new Date();
+      const currentHour = now.getHours().toString().padStart(2, "0");
+      const currentMinute = now.getMinutes().toString().padStart(2, "0");
+      const currentTime = `${currentHour}:${currentMinute}`;
 
-      try {
-        const channel = await client.channels.fetch(channelId);
-        if (channel) {
-          channel
-            .send(setting.message)
-            .then((sentMessage) => sentMessage.react("✅"))
-            .catch(console.error);
+      for (const guildId in channels) {
+        const channelId = channels[guildId];
+        const setting = settings[guildId];
+
+        if (!setting || setting.hour !== currentTime) continue;
+
+        try {
+          const channel = await client.channels.fetch(channelId);
+          if (channel) {
+            channel
+              .send(setting.message)
+              .then((sentMessage) => sentMessage.react("✅"))
+              .catch(console.error);
+
+            console.log(
+              `📨 Message envoyé à ${currentTime} dans le serveur ${guildId}`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `❌ Erreur lors de l'envoi dans le canal de ${guildId}:`,
+            error
+          );
         }
-      } catch (error) {
-        console.error(`Erreur canal pour ${guildId}:`, error);
       }
+    } catch (error) {
+      console.error("❌ Erreur globale dans le cron :", error);
+    } finally {
+      isJobRunning = false;
     }
   },
   {
