@@ -208,14 +208,15 @@ client.on("messageCreate", (message) => {
       });
 
     let channelsList = "Aucun canal défini.";
+    const guildId = message.guild.id;
+    let channelId = null;
+
     if (fs.existsSync("channels.json")) {
       const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-      channelsList =
-        Object.keys(channels).length > 0
-          ? `Liste des canaux définis :\n${Object.values(channels)
-              .map((id) => `<#${id}>`)
-              .join("\n")}`
-          : "Aucun canal défini.";
+      if (channels[guildId]) {
+        channelId = channels[guildId];
+        channelsList = `Liste des canaux définis :\n<#${channelId}>`;
+      }
     }
 
     embed.addFields({
@@ -223,8 +224,30 @@ client.on("messageCreate", (message) => {
       value: channelsList,
     });
 
+    // Ajout des infos de settings.json
+    if (fs.existsSync("settings.json")) {
+      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+      const setting = settings[guildId];
+
+      if (setting) {
+        embed.addFields({
+          name: "Message quotidien programmé",
+          value: `🕒 Heure : **${setting.hour}**\n💬 Message : **${setting.message}**`,
+        });
+      } else {
+        embed.addFields({
+          name: "Message quotidien programmé",
+          value: "Aucun message programmé pour ce serveur.",
+        });
+      }
+    } else {
+      embed.addFields({
+        name: "Message quotidien programmé",
+        value: "Fichier settings.json introuvable.",
+      });
+    }
+
     message.reply({ embeds: [embed] });
-    // Commande !testreact
   } else if (content === "!testreact") {
     message.channel
       .send("Ceci est un test de message avec une réaction automatique. 🚀")
