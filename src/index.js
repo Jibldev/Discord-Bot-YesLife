@@ -8,6 +8,8 @@ const app = express();
 
 const { updateStreak } = require("./streakManager");
 
+const { connectToDatabase, getDatabase } = require("./database");
+
 app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
@@ -116,7 +118,6 @@ client.on("messageCreate", async (message) => {
     const channelId = message.channel.id;
     const guildId = message.guild.id;
 
-    const { getDatabase } = require("./database");
     const db = getDatabase();
     const channelsCollection = db.collection("channels");
 
@@ -321,9 +322,9 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-const connectToDatabase = require("./database");
-
-// Connexion à MongoDB
-connectToDatabase();
+client.once("ready", async () => {
+  await connectToDatabase();
+  console.log("✅ Bot prêt !");
+});
 
 client.login(process.env.DISCORD_TOKEN);
