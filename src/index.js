@@ -12,18 +12,6 @@ app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
 
-// Route de DEBUG : affiche les réactions enregistrées
-app.get("/reactions", (req, res) => {
-  const fs = require("fs");
-
-  if (fs.existsSync("reactions.json")) {
-    const data = JSON.parse(fs.readFileSync("reactions.json", "utf8"));
-    res.json(data);
-  } else {
-    res.status(404).send("Aucune réaction enregistrée pour l'instant.");
-  }
-});
-
 app.listen(process.env.PORT || 3000, () => {
   console.log("Serveur HTTP actif.");
 });
@@ -112,7 +100,7 @@ client.on("messageReactionAdd", (reaction, user) => {
 });
 
 // Commande pour définir un canal
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   const rawContent = message.content;
@@ -127,20 +115,23 @@ client.on("messageCreate", (message) => {
 
     const channelId = message.channel.id;
     const guildId = message.guild.id;
-    // Commande !setchannel !removechannel
-    let channels = {};
-    if (fs.existsSync("channels.json")) {
-      channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-    }
 
-    if (channels[guildId] === channelId) {
+    const { getDatabase } = require("./database");
+    const db = getDatabase();
+    const channelsCollection = db.collection("channels");
+
+    const existing = await channelsCollection.findOne({ guildId });
+
+    if (existing) {
       return message.reply(
         `❌ Ce canal est déjà défini pour les messages quotidiens !`
       );
     }
 
-    channels[guildId] = channelId;
-    fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
+    await channelsCollection.insertOne({
+      guildId,
+      channelId,
+    });
 
     message.reply(
       `✅ Ce canal (${message.channel}) est maintenant défini pour les messages quotidiens !`
