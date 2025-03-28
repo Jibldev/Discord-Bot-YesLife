@@ -291,26 +291,31 @@ client.on("messageCreate", async (message) => {
       console.error("Erreur de récupération des données MongoDB :", error);
     }
   } else if (content === "!streaks") {
-    const file = "reactionStreaks.json";
+    try {
+      const db = getDatabase();
+      const streaksCollection = db.collection("streaks");
 
-    if (!fs.existsSync(file)) {
-      return message.reply("Aucune donnée de streak disponible.");
+      // Récupérer tous les documents dans la collection "streaks"
+      const streaksData = await streaksCollection.find({}).toArray();
+
+      if (streaksData.length === 0) {
+        return message.reply("Aucune donnée de streak disponible.");
+      }
+
+      let reply = "🔥 **Streaks actuels :**\n";
+
+      // Parcours de chaque document de streak et préparation du message
+      streaksData.forEach((userData) => {
+        reply += `- <@${userData.userId}> → **${userData.streak} jours** (total : ${userData.count} réactions)\n`;
+      });
+
+      message.reply(reply);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des streaks :", error);
+      message.reply(
+        "❌ Une erreur s'est produite lors de la récupération des streaks."
+      );
     }
-
-    const data = JSON.parse(fs.readFileSync(file, "utf8"));
-
-    if (Object.keys(data).length === 0) {
-      return message.reply("Aucune donnée de streak disponible.");
-    }
-
-    let reply = "🔥 **Streaks actuels :**\n";
-
-    for (const userId in data) {
-      const userData = data[userId];
-      reply += `- <@${userId}> → **${userData.streak} jours** (total : ${userData.count} réactions)\n`;
-    }
-
-    message.reply(reply);
   }
 });
 
