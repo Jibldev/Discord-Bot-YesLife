@@ -306,6 +306,27 @@ client.on("messageCreate", (message) => {
         `📅 **Heure programmée** : \`${settingHour}\`\n` +
         `💬 **Message programmé** : ${settingMessage}`
     );
+  } else if (content === "!streaks") {
+    const file = "reactionStreaks.json";
+
+    if (!fs.existsSync(file)) {
+      return message.reply("Aucune donnée de streak disponible.");
+    }
+
+    const data = JSON.parse(fs.readFileSync(file, "utf8"));
+
+    if (Object.keys(data).length === 0) {
+      return message.reply("Aucune donnée de streak disponible.");
+    }
+
+    let reply = "🔥 **Streaks actuels :**\n";
+
+    for (const userId in data) {
+      const userData = data[userId];
+      reply += `- <@${userId}> → **${userData.streak} jours** (total : ${userData.count} réactions)\n`;
+    }
+
+    message.reply(reply);
   }
 });
 
