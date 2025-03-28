@@ -42,11 +42,10 @@ cron.schedule("* * * * *", async () => {
   console.log("✅ Cron lancé");
 
   try {
-    if (!fs.existsSync("channels.json") || !fs.existsSync("settings.json"))
-      return;
+    const db = await getDatabase();
+    const channelsCollection = db.collection("channels");
+    const settingsCollection = db.collection("settings");
 
-    const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-    const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
     const now = new Date().toLocaleString("fr-FR", {
       timeZone: "Europe/Paris",
     });
@@ -55,23 +54,22 @@ cron.schedule("* * * * *", async () => {
     const currentMinute = timeParts?.[2] || "00";
     const currentTime = `${currentHour}:${currentMinute}`;
 
-    for (const guildId in channels) {
-      const channelId = channels[guildId];
-      const setting = settings[guildId];
+    const channels = await channelsCollection.find({}).toArray();
+    const settings = await settingsCollection.find({}).toArray();
 
-      if (!setting) continue;
+    for (const channel of channels) {
+      const { guildId, channelId } = channel;
+      const setting = settings.find((s) => s.guildId === guildId);
 
-      if (setting.hour !== currentTime) continue;
+      if (!setting || setting.hour !== currentTime) continue;
 
       try {
-        const channel = await client.channels.fetch(channelId);
-        if (channel) {
-          channel
+        const channelToSend = await client.channels.fetch(channelId);
+        if (channelToSend) {
+          channelToSend
             .send(setting.message)
             .then((sentMessage) => sentMessage.react("✅"))
             .catch(console.error);
-
-          lastSent[guildId] = currentTime; // Marque l'envoi
 
           console.log(
             `📨 Message envoyé à ${currentTime} dans le serveur ${guildId}`
