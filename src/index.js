@@ -143,27 +143,31 @@ client.on("messageCreate", async (message) => {
       );
     }
 
-    const channelId = message.channel.id;
     const guildId = message.guild.id;
 
-    let channels = {};
-    if (fs.existsSync("channels.json")) {
-      channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-    }
+    try {
+      const db = getDatabase();
+      const channelsCollection = db.collection("channels");
 
-    if (channels[guildId] !== channelId) {
-      return message.reply(
-        `❌ Ce canal n'est pas défini pour les messages quotidiens.`
+      const existing = await channelsCollection.findOne({ guildId });
+
+      if (!existing) {
+        return message.reply(
+          `❌ Aucun canal défini pour les messages quotidiens sur ce serveur.`
+        );
+      }
+
+      await channelsCollection.deleteOne({ guildId });
+
+      message.reply(
+        `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
+      );
+    } catch (error) {
+      console.error("❌ Erreur lors de la suppression du canal :", error);
+      message.reply(
+        "❌ Une erreur s'est produite lors de la suppression du canal."
       );
     }
-
-    delete channels[guildId];
-    fs.writeFileSync("channels.json", JSON.stringify(channels, null, 2));
-
-    message.reply(
-      `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
-    );
-    // Commande !testreact
   } else if (content === "!testreact") {
     message.channel
       .send("Ceci est un test de message avec une réaction automatique. 🚀")
