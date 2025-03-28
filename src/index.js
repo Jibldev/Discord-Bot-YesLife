@@ -163,58 +163,6 @@ client.on("messageCreate", async (message) => {
     message.reply(
       `✅ Le canal (${message.channel}) a été retiré de la liste des messages quotidiens.`
     );
-    // Commande !test
-  } else if (content === "!test") {
-    const embed = new EmbedBuilder()
-      .setColor("#00ff00")
-      .setTitle("Test réussi ! ✅")
-      .setDescription("Le bot fonctionne correctement.")
-      .setFooter({
-        text: "Commande test",
-        iconURL: client.user.displayAvatarURL(),
-      });
-
-    let channelsList = "Aucun canal défini.";
-    const guildId = message.guild.id;
-    let channelId = null;
-
-    if (fs.existsSync("channels.json")) {
-      const channels = JSON.parse(fs.readFileSync("channels.json", "utf8"));
-      if (channels[guildId]) {
-        channelId = channels[guildId];
-        channelsList = `Liste des canaux définis :\n<#${channelId}>`;
-      }
-    }
-
-    embed.addFields({
-      name: "Canaux définis pour les messages quotidiens",
-      value: channelsList,
-    });
-
-    // Ajout des infos de settings.json
-    if (fs.existsSync("settings.json")) {
-      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
-      const setting = settings[guildId];
-
-      if (setting) {
-        embed.addFields({
-          name: "Message quotidien programmé",
-          value: `🕒 Heure : **${setting.hour}**\n💬 Message : **${setting.message}**`,
-        });
-      } else {
-        embed.addFields({
-          name: "Message quotidien programmé",
-          value: "Aucun message programmé pour ce serveur.",
-        });
-      }
-    } else {
-      embed.addFields({
-        name: "Message quotidien programmé",
-        value: "Fichier settings.json introuvable.",
-      });
-    }
-
-    message.reply({ embeds: [embed] });
     // Commande !testreact
   } else if (content === "!testreact") {
     message.channel
@@ -228,7 +176,7 @@ client.on("messageCreate", async (message) => {
       });
     // Commande !setdaily
   } else if (content.startsWith("!setdaily")) {
-    if (!message.member.permissions.has("Administrator")) {
+    if (!message.member.permissions.has("ADMINISTRATOR")) {
       return message.reply("🚫 Tu dois être administrateur pour faire cela.");
     }
 
@@ -249,23 +197,47 @@ client.on("messageCreate", async (message) => {
     const customMessage = args.slice(2).join(" ");
     const guildId = message.guild.id;
 
-    let settings = {};
-    if (fs.existsSync("settings.json")) {
-      settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
+    try {
+      // Connexion à la base de données MongoDB
+      const db = await getDatabase();
+      const settingsCollection = db.collection("settings");
+
+      // Vérification si un réglage existe déjà pour ce guildId
+      const existingSetting = await settingsCollection.findOne({ guildId });
+
+      if (existingSetting) {
+        // Mise à jour du réglage existant
+        await settingsCollection.updateOne(
+          { guildId },
+          {
+            $set: {
+              hour: time,
+              message: customMessage,
+            },
+          }
+        );
+        message.reply(
+          `✅ Message quotidien mis à jour pour ce serveur : **${customMessage}** à **${time}**.`
+        );
+      } else {
+        // Insertion d'un nouveau réglage
+        await settingsCollection.insertOne({
+          guildId,
+          hour: time,
+          message: customMessage,
+        });
+        message.reply(
+          `✅ Nouveau message quotidien défini pour ce serveur : **${customMessage}** à **${time}**.`
+        );
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de !setdaily :", error);
+      message.reply(
+        "❌ Une erreur est survenue lors de la mise à jour du message quotidien."
+      );
     }
-
-    settings[guildId] = {
-      hour: time,
-      message: customMessage,
-    };
-
-    fs.writeFileSync("settings.json", JSON.stringify(settings, null, 2));
-
-    message.reply(
-      `✅ Message quotidien mis à jour : **${customMessage}** à **${time}**.`
-    );
-    // Commande !debugcron
   } else if (content === "!debugcron") {
+    // Commande !debugcron
     const now = new Date().toLocaleString("fr-FR", {
       timeZone: "Europe/Paris",
     });
