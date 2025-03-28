@@ -8,8 +8,6 @@ const app = express();
 
 const { updateStreak } = require("./streakManager");
 
-const connectToDatabase = require("./database");
-
 app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
