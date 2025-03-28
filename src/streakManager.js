@@ -1,8 +1,8 @@
 const { getDatabase } = require("./database"); // Import de MongoDB
 
 // Définir ici ta plage horaire valide
-const validStart = "15:20";
-const validEnd = "16:00";
+const validStart = "07:00";
+const validEnd = "19:00";
 
 // Fonction pour vérifier si l'heure actuelle est dans la plage valide
 function isWithinValidHours() {
@@ -14,62 +14,65 @@ function isWithinValidHours() {
 }
 
 // Fonction pour mettre à jour le streak dans MongoDB
-async function updateStreak(userId, messageId, channel) {
+async function updateStreak(userId, channel) {
   if (!isWithinValidHours()) {
     console.log(`⏰ Réaction hors plage horaire pour ${userId}`);
     return;
   }
 
   const db = getDatabase();
-  const streaksCollection = db.collection("streaks");
+  const reactionStreaksCollection = db.collection("streaks");
 
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  let userData = await reactionStreaksCollection.findOne({ userId });
 
-  // Vérifier si l'utilisateur a déjà un enregistrement pour aujourd'hui
-  const userData = await streaksCollection.findOne({
-    userId,
-    lastReaction: today,
-  });
+  if (!userData) {
+    // Si l'utilisateur n'a pas encore réagi, on crée un nouvel enregistrement
+    userData = {
+      userId,
+      count: 1,
+      streak: 1,
+      lastReaction: today,
+    };
 
-  if (userData) {
-    console.log(`✅ ${userId} a déjà réagi aujourd'hui`);
-    return; // Ne rien faire si l'utilisateur a déjà réagi aujourd'hui
+    await reactionStreaksCollection.insertOne(userData);
+    console.log(`🔥 Nouvelle réaction pour ${userId}: Streak de 1 jour`);
+    channel.send(
+      `✅ Merci <@${userId}> ! Ton streak est maintenant de **1** jour (${userData.count} réaction au total).`
+    );
+  } else {
+    // Si l'utilisateur a déjà réagi aujourd'hui, ne rien faire
+    if (userData.lastReaction === today) {
+      console.log(`✅ ${userId} a déjà réagi aujourd'hui`);
+      return;
+    }
+
+    // Vérifie si l'utilisateur a réagi hier
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    let newStreak = 1;
+    if (userData.lastReaction === yesterdayStr) {
+      newStreak = userData.streak + 1;
+    }
+
+    const updatedData = {
+      lastReaction: today,
+      streak: newStreak,
+      count: userData.count + 1,
+    };
+
+    await reactionStreaksCollection.updateOne(
+      { userId },
+      { $set: updatedData }
+    );
+    console.log(`🔥 Streak mis à jour pour ${userId}: ${newStreak} jours`);
+
+    channel.send(
+      `✅ Merci <@${userId}> ! Ton streak est maintenant de **${newStreak}** jour(s) (${updatedData.count} réactions au total).`
+    );
   }
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-  // Chercher un précédent enregistrement pour cet utilisateur
-  const previousData = await streaksCollection.findOne({ userId });
-
-  let streak = 1; // Nouveau streak par défaut
-  if (previousData && previousData.lastReaction === yesterdayStr) {
-    streak = previousData.streak + 1; // Continue le streak
-  }
-
-  // Insertion ou mise à jour de l'entrée de l'utilisateur
-  await streaksCollection.updateOne(
-    { userId },
-    {
-      $set: {
-        userId,
-        messageId,
-        count: (previousData?.count || 0) + 1, // Incrémentation du nombre de réactions
-        streak,
-        lastReaction: today,
-      },
-    },
-    { upsert: true } // Crée une nouvelle entrée si l'utilisateur n'existe pas
-  );
-
-  console.log(`🔥 Streak mis à jour pour ${userId} : ${streak} jours`);
-
-  channel.send(
-    `✅ Merci <@${userId}> ! Ton streak est maintenant de **${streak}** jour(s) (${
-      (previousData?.count || 0) + 1
-    } réactions au total).`
-  );
 }
 
 module.exports = { updateStreak };
