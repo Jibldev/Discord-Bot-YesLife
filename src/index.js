@@ -8,7 +8,7 @@ const app = express();
 
 const { updateStreak } = require("./streakManager");
 
-const { connectToDatabase } = require("./database");
+const connectToDatabase = require("./database");
 
 app.get("/", (req, res) => {
   res.send("Bot actif!");
@@ -332,10 +332,9 @@ client.on("messageCreate", (message) => {
   }
 });
 
-connectToDatabase().then((db) => {
-  if (db) {
-    console.log("📂 Base de données prête");
-  }
-});
+const connectToDatabase = require("./database");
+
+// Connexion à MongoDB
+connectToDatabase();
 
 client.login(process.env.DISCORD_TOKEN);
