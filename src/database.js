@@ -8,10 +8,10 @@ async function connectToDatabase() {
   try {
     await clientMongo.connect();
     console.log("✅ Connexion à MongoDB réussie");
-    return clientMongo.db("YesLifeBot");
+    return clientMongo.db();
   } catch (error) {
     console.error("❌ Erreur de connexion à MongoDB :", error);
   }
 }
 
-module.exports = { connectToDatabase };
+module.exports = connectToDatabase;
