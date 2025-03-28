@@ -8,6 +8,8 @@ const app = express();
 
 const { updateStreak } = require("./streakManager");
 
+const { connectToDatabase } = require("./database");
+
 app.get("/", (req, res) => {
   res.send("Bot actif!");
 });
@@ -327,6 +329,12 @@ client.on("messageCreate", (message) => {
     }
 
     message.reply(reply);
+  }
+});
+
+connectToDatabase().then((db) => {
+  if (db) {
+    console.log("📂 Base de données prête");
   }
 });
 
