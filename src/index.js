@@ -30,7 +30,7 @@ const client = new Client({
 
 let isJobRunning = false;
 
-cron.schedule("* * * * *", async () => {
+cron.schedule("*/5 * * * *", async () => {
   if (isJobRunning) {
     console.log("⏳ Cron ignoré : tâche déjà en cours");
     return;
