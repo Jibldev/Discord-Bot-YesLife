@@ -21,60 +21,54 @@ async function updateStreak(userId, messageId, channel) {
   }
 
   const db = getDatabase();
-  const reactionStreaksCollection = db.collection("streaks");
+  const streaksCollection = db.collection("streaks");
 
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  let userData = await reactionStreaksCollection.findOne({ userId, messageId });
 
-  if (!userData) {
-    // Si l'utilisateur n'a pas encore réagi, on crée un nouvel enregistrement
-    userData = {
-      userId,
-      messageId,
-      count: 1,
-      streak: 1,
-      lastReaction: today,
-    };
+  // Vérifier si l'utilisateur a déjà un enregistrement pour aujourd'hui
+  const userData = await streaksCollection.findOne({
+    userId,
+    lastReaction: today,
+  });
 
-    await reactionStreaksCollection.insertOne(userData);
-    console.log(`🔥 Nouvelle réaction pour ${userId}: Streak de 1 jour`);
-  } else {
-    // Si l'utilisateur a déjà réagi aujourd'hui, ne rien faire
-    if (userData.lastReaction === today) {
-      console.log(`✅ ${userId} a déjà réagi aujourd'hui`);
-      return;
-    }
-
-    // Vérifie si l'utilisateur a réagi hier
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-    if (userData.lastReaction === yesterdayStr) {
-      // Continue le streak
-      userData.streak += 1;
-    } else {
-      // Réinitialise le streak
-      userData.streak = 1;
-    }
-
-    // Met à jour le nombre de réactions et la date de la dernière réaction
-    userData.count += 1;
-    userData.lastReaction = today;
-
-    // Mise à jour dans la base de données MongoDB
-    await reactionStreaksCollection.updateOne(
-      { userId, messageId },
-      { $set: userData }
-    );
-    console.log(
-      `🔥 Streak mis à jour pour ${userId}: ${userData.streak} jours`
-    );
+  if (userData) {
+    console.log(`✅ ${userId} a déjà réagi aujourd'hui`);
+    return; // Ne rien faire si l'utilisateur a déjà réagi aujourd'hui
   }
 
-  // Envoie un message dans le canal de Discord pour confirmer
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  // Chercher un précédent enregistrement pour cet utilisateur
+  const previousData = await streaksCollection.findOne({ userId });
+
+  let streak = 1; // Nouveau streak par défaut
+  if (previousData && previousData.lastReaction === yesterdayStr) {
+    streak = previousData.streak + 1; // Continue le streak
+  }
+
+  // Insertion ou mise à jour de l'entrée de l'utilisateur
+  await streaksCollection.updateOne(
+    { userId },
+    {
+      $set: {
+        userId,
+        messageId,
+        count: (previousData?.count || 0) + 1, // Incrémentation du nombre de réactions
+        streak,
+        lastReaction: today,
+      },
+    },
+    { upsert: true } // Crée une nouvelle entrée si l'utilisateur n'existe pas
+  );
+
+  console.log(`🔥 Streak mis à jour pour ${userId} : ${streak} jours`);
+
   channel.send(
-    `✅ Merci <@${userId}> ! Ton streak est maintenant de **${userData.streak}** jour(s) (${userData.count} réactions au total).`
+    `✅ Merci <@${userId}> ! Ton streak est maintenant de **${streak}** jour(s) (${
+      (previousData?.count || 0) + 1
+    } réactions au total).`
   );
 }
 
