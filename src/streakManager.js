@@ -1,8 +1,8 @@
 const { getDatabase } = require("./database"); // Import de MongoDB
 
 // Définir ici ta plage horaire valide
-const validStart = "12:30";
-const validEnd = "13:00";
+const validStart = "15:00";
+const validEnd = "15:30";
 
 // Fonction pour vérifier si l'heure actuelle est dans la plage valide
 function isWithinValidHours() {
