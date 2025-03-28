@@ -30,8 +30,6 @@ const client = new Client({
 
 let isJobRunning = false;
 
-let lastSent = {}; // mémoire temporaire pour éviter les doublons
-
 cron.schedule("* * * * *", async () => {
   if (isJobRunning) {
     console.log("⏳ Cron ignoré : tâche déjà en cours");
@@ -282,20 +280,44 @@ client.on("messageCreate", async (message) => {
     let settingMessage = "Aucun message programmé.";
     const guildId = message.guild.id;
 
-    if (fs.existsSync("settings.json")) {
-      const settings = JSON.parse(fs.readFileSync("settings.json", "utf8"));
-      const setting = settings[guildId];
+    // Récupérer les données de MongoDB
+    try {
+      const db = await getDatabase();
+      const channelsCollection = db.collection("channels");
+      const settingsCollection = db.collection("settings");
+
+      const channels = await channelsCollection.find({}).toArray();
+      const settings = await settingsCollection.find({}).toArray();
+
+      // Affichage dans la console
+      console.log("Channels récupérés:", channels);
+      console.log("Settings récupérés:", settings);
+
+      // Chercher le setting pour ce guildId
+      const setting = settings.find((s) => s.guildId === guildId);
       if (setting) {
         settingHour = setting.hour;
         settingMessage = setting.message;
       }
-    }
 
-    message.reply(
-      `🕒 **Heure actuelle perçue par le bot** : \`${currentTime}\`\n` +
-        `📅 **Heure programmée** : \`${settingHour}\`\n` +
-        `💬 **Message programmé** : ${settingMessage}`
-    );
+      // Envoie un message de confirmation
+      message.reply(
+        `🕒 **Heure actuelle perçue par le bot** : \`${currentTime}\`\n` +
+          `📅 **Heure programmée** : \`${settingHour}\`\n` +
+          `💬 **Message programmé** : ${settingMessage}\n\n` +
+          `📚 **Channels définis** : ${channels
+            .map(
+              (channel) =>
+                `Guild ID: ${channel.guildId}, Channel ID: ${channel.channelId}`
+            )
+            .join("\n")}`
+      );
+    } catch (error) {
+      message.reply(
+        "❌ Une erreur s'est produite lors de la vérification des données."
+      );
+      console.error("Erreur de récupération des données MongoDB :", error);
+    }
   } else if (content === "!streaks") {
     const file = "reactionStreaks.json";
 
