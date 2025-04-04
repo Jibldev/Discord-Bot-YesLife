@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "./.env" });
 
-const { Client, IntentsBitField, EmbedBuilder } = require("discord.js");
+const { Client, IntentsBitField, Partials } = require("discord.js");
 const cron = require("node-cron");
 const express = require("express");
 const fs = require("fs");
@@ -26,6 +26,7 @@ const client = new Client({
     IntentsBitField.Flags.MessageContent,
     IntentsBitField.Flags.GuildMessageReactions,
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 let isJobRunning = false;
@@ -89,6 +90,7 @@ cron.schedule("*/5 * * * *", async () => {
 
 client.on("messageReactionAdd", (reaction, user) => {
   try {
+    console.log("➡️ Réaction détectée");
     if (user.bot || reaction.emoji.name !== "✅") return;
 
     updateStreak(user.id, reaction.message.id, reaction.message.channel);
