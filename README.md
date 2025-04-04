@@ -6,3 +6,4 @@
 !testreact: Envoie un message avec une réaction et permet de tester
 !setdaily: Gère l'heure et le message
 !streaks: Voir les streaks
+!ladder

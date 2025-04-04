@@ -77,4 +77,11 @@ async function updateStreak(userId, messageId, channel) {
   );
 }
 
-module.exports = { updateStreak };
+async function getUserStreakInfo(userId) {
+  const db = getDatabase();
+  const streaksCollection = db.collection("streaks");
+
+  return await streaksCollection.findOne({ userId });
+}
+
+module.exports = { updateStreak, getUserStreakInfo };

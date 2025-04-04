@@ -202,15 +202,12 @@ client.on("messageCreate", async (message) => {
     const guildId = message.guild.id;
 
     try {
-      // Connexion à la base de données MongoDB
       const db = await getDatabase();
       const settingsCollection = db.collection("settings");
 
-      // Vérification si un réglage existe déjà pour ce guildId
       const existingSetting = await settingsCollection.findOne({ guildId });
 
       if (existingSetting) {
-        // Mise à jour du réglage existant
         await settingsCollection.updateOne(
           { guildId },
           {
@@ -224,7 +221,6 @@ client.on("messageCreate", async (message) => {
           `✅ Message quotidien mis à jour pour ce serveur : **${customMessage}** à **${time}**.`
         );
       } else {
-        // Insertion d'un nouveau réglage
         await settingsCollection.insertOne({
           guildId,
           hour: time,
@@ -256,7 +252,6 @@ client.on("messageCreate", async (message) => {
     let settingMessage = "Aucun message programmé.";
     const guildId = message.guild.id;
 
-    // Récupérer les données de MongoDB
     try {
       const db = await getDatabase();
       const channelsCollection = db.collection("channels");
@@ -265,11 +260,9 @@ client.on("messageCreate", async (message) => {
       const channels = await channelsCollection.find({}).toArray();
       const settings = await settingsCollection.find({}).toArray();
 
-      // Affichage dans la console
       console.log("Channels récupérés:", channels);
       console.log("Settings récupérés:", settings);
 
-      // Chercher le setting pour ce guildId
       const setting = settings.find((s) => s.guildId === guildId);
       if (setting) {
         settingHour = setting.hour;
@@ -299,7 +292,6 @@ client.on("messageCreate", async (message) => {
       const db = getDatabase();
       const streaksCollection = db.collection("streaks");
 
-      // Récupérer tous les documents dans la collection "streaks"
       const streaksData = await streaksCollection.find({}).toArray();
 
       if (streaksData.length === 0) {
@@ -308,7 +300,6 @@ client.on("messageCreate", async (message) => {
 
       let reply = "🔥 **Streaks actuels :**\n";
 
-      // Parcours de chaque document de streak et préparation du message
       streaksData.forEach((userData) => {
         reply += `- <@${userData.userId}> → **${userData.streak} jours** (total : ${userData.count} réactions)\n`;
       });
@@ -325,7 +316,6 @@ client.on("messageCreate", async (message) => {
       const db = getDatabase();
       const streaksCollection = db.collection("streaks");
 
-      // Récupérer tous les streaks
       const allStreaks = await streaksCollection.find({}).toArray();
 
       if (allStreaks.length === 0) {
@@ -338,7 +328,6 @@ client.on("messageCreate", async (message) => {
       // Classement par total de réactions
       const reactionRanking = [...allStreaks].sort((a, b) => b.count - a.count);
 
-      // Formatage
       let streakText = "🏆 **Top Streaks** :\n";
       streakRanking.slice(0, 5).forEach((user, index) => {
         streakText += `${index + 1}. <@${user.userId}> → **${
@@ -353,11 +342,37 @@ client.on("messageCreate", async (message) => {
         }** réaction(s)\n`;
       });
 
-      // Envoi dans Discord
       message.reply(`${streakText}\n${reactionText}`);
     } catch (error) {
       console.error("Erreur lors du classement !ladder :", error);
       message.reply("❌ Une erreur s'est produite lors du classement.");
+    }
+  } else if (content.startsWith("!streakuser")) {
+    const args = message.mentions.users;
+    const targetUser = args.first() || message.author; // soit l'utilisateur mentionné, soit l'auteur
+    const userId = targetUser.id;
+
+    try {
+      const { getUserStreakInfo } = require("./streakManager");
+      const userData = await getUserStreakInfo(userId);
+
+      if (!userData) {
+        return message.reply(
+          `❌ ${
+            targetUser.id === message.author.id ? "Tu n'as" : `<@${userId}> n'a`
+          } pas encore commencé de streak.`
+        );
+      }
+
+      message.reply(
+        `🔥 Streak de <@${userId}> : **${userData.streak} jour(s)**\n` +
+          `✅ Total de réactions : **${userData.count}**`
+      );
+    } catch (error) {
+      console.error("Erreur lors de la récupération du streak :", error);
+      message.reply(
+        "❌ Une erreur est survenue lors de la récupération du streak."
+      );
     }
   }
 });
