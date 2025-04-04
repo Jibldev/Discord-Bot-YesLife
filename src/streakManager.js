@@ -30,6 +30,7 @@ async function updateStreak(userId, messageId, channel) {
       userId,
       count: 1,
       streak: 1,
+      bestStreak: 1,
       lastReaction: today,
     };
     await reactionStreaksCollection.insertOne(userData);
@@ -48,6 +49,10 @@ async function updateStreak(userId, messageId, channel) {
 
     if (userData.lastReaction === yesterdayStr) {
       userData.streak += 1;
+
+      if (userData.streak > (userData.bestStreak || 0)) {
+        userData.bestStreak = userData.streak;
+      }
     } else {
       userData.streak = 1;
     }
@@ -60,6 +65,7 @@ async function updateStreak(userId, messageId, channel) {
       {
         $set: {
           streak: userData.streak,
+          bestStreak: userData.bestStreak,
           count: userData.count,
           lastReaction: today,
         },

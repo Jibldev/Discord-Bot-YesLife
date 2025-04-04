@@ -328,11 +328,24 @@ client.on("messageCreate", async (message) => {
       // Classement par total de réactions
       const reactionRanking = [...allStreaks].sort((a, b) => b.count - a.count);
 
+      // Classement par meilleur streak historique
+      const bestStreakRanking = [...allStreaks].sort(
+        (a, b) => (b.bestStreak || b.streak) - (a.bestStreak || a.streak)
+      );
+
       let streakText = "🏆 **Top Streaks** :\n";
       streakRanking.slice(0, 5).forEach((user, index) => {
         streakText += `${index + 1}. <@${user.userId}> → **${
           user.streak
         }** jour(s)\n`;
+      });
+
+      let bestStreakText = "🏅 **Top Meilleurs Streaks Historiques** :\n";
+      bestStreakRanking.slice(0, 5).forEach((user, index) => {
+        const best = user.bestStreak || user.streak;
+        bestStreakText += `${index + 1}. <@${
+          user.userId
+        }> → **${best}** jour(s)\n`;
       });
 
       let reactionText = "🔥 **Top Réactions** :\n";
@@ -365,8 +378,12 @@ client.on("messageCreate", async (message) => {
       }
 
       message.reply(
-        `🔥 Streak de <@${userId}> : **${userData.streak} jour(s)**\n` +
-          `✅ Total de réactions : **${userData.count}**`
+        `📊 Streak de **<@${userId}>** :\n` +
+          `🔥 Actuel : **${userData.streak} jour(s)**\n` +
+          `🏆 Meilleur : **${
+            userData.bestStreak || userData.streak
+          } jour(s)**\n` +
+          `📈 Total de réactions : **${userData.count}**`
       );
     } catch (error) {
       console.error("Erreur lors de la récupération du streak :", error);
