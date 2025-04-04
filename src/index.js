@@ -320,6 +320,45 @@ client.on("messageCreate", async (message) => {
         "❌ Une erreur s'est produite lors de la récupération des streaks."
       );
     }
+  } else if (content === "!ladder") {
+    try {
+      const db = getDatabase();
+      const streaksCollection = db.collection("streaks");
+
+      // Récupérer tous les streaks
+      const allStreaks = await streaksCollection.find({}).toArray();
+
+      if (allStreaks.length === 0) {
+        return message.reply("❌ Aucune donnée de classement disponible.");
+      }
+
+      // Classement par streak
+      const streakRanking = [...allStreaks].sort((a, b) => b.streak - a.streak);
+
+      // Classement par total de réactions
+      const reactionRanking = [...allStreaks].sort((a, b) => b.count - a.count);
+
+      // Formatage
+      let streakText = "🏆 **Top Streaks** :\n";
+      streakRanking.slice(0, 5).forEach((user, index) => {
+        streakText += `${index + 1}. <@${user.userId}> → **${
+          user.streak
+        }** jour(s)\n`;
+      });
+
+      let reactionText = "🔥 **Top Réactions** :\n";
+      reactionRanking.slice(0, 5).forEach((user, index) => {
+        reactionText += `${index + 1}. <@${user.userId}> → **${
+          user.count
+        }** réaction(s)\n`;
+      });
+
+      // Envoi dans Discord
+      message.reply(`${streakText}\n${reactionText}`);
+    } catch (error) {
+      console.error("Erreur lors du classement !ladder :", error);
+      message.reply("❌ Une erreur s'est produite lors du classement.");
+    }
   }
 });
 
