@@ -49,7 +49,7 @@ Chaque jour, un message est posté à une heure définie, et les utilisateurs pe
 
 1. Clone ce repo :
 
-git clone https://github.com/ton-pseudo/yeslifebot.git
+git clone https://github.com/Jibldev/yeslifebot.git
 
 2. Installe les dépendances :
 
